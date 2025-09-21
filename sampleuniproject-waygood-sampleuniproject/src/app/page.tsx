@@ -1,47 +1,72 @@
 'use client';
 
-import { useState, useMemo } from 'react';
-import { courses } from '@/lib/data/courses';
-import { universities } from '@/lib/data/universities';
-import type { Course, University } from '@/lib/types';
-import CourseCard from '@/components/course-card';
+import { useState, useEffect, useMemo } from 'react';
+import axios from 'axios';
+import Link from 'next/link';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Slider } from '@/components/ui/slider';
 import { Button } from '@/components/ui/button';
-import Link from 'next/link';
+import CourseCard from '@/components/course-card';
 import { Compass, Search, SlidersHorizontal, Sparkles } from 'lucide-react';
+import type { Course } from '@/lib/types';
 
 export default function Home() {
+  const [courses, setCourses] = useState<Course[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedUniversity, setSelectedUniversity] = useState('all');
-  const [tuitionRange, setTuitionRange] = useState([0, 50000]);
   const [courseLevel, setCourseLevel] = useState('all');
+  const [tuitionRange, setTuitionRange] = useState([0, 50000]);
 
+  // Fetch courses from API
+  useEffect(() => {
+    const fetchCourses = async () => {
+      try {
+        const res = await axios.get('http://localhost:3000/api/courses/search');
+        setCourses(res.data);
+      } catch (err) {
+        console.error('Error fetching courses:', err);
+      }
+    };
+    fetchCourses();
+  }, []);
+
+  // Get unique universities from course data
   const universityOptions = useMemo(() => {
-    return universities.map((uni) => ({ value: uni.uniqueCode, label: uni.universityName }));
-  }, []);
+    const uniqueUniversities = Array.from(new Set(courses.map(course => course.University)));
+    return ['all', ...uniqueUniversities];
+  }, [courses]);
 
+  // Get unique course levels
   const courseLevels = useMemo(() => {
-    const levels = new Set(courses.map(course => course.courseLevel));
-    return ['all', ...Array.from(levels)];
-  }, []);
+    const levels = Array.from(new Set(courses.map(course => course.Level)));
+    return ['all', ...levels];
+  }, [courses]);
 
+  // Filter courses based on search, university, level, tuition
   const filteredCourses = useMemo(() => {
-    return courses.filter((course) => {
-      const university = universities.find(uni => uni.uniqueCode === course.universityCode);
-      return (
-        (course.courseName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          course.overviewDescription.toLowerCase().includes(searchTerm.toLowerCase())) &&
-        (selectedUniversity === 'all' || course.universityCode === selectedUniversity) &&
-        (course.firstYearTuitionFee >= tuitionRange[0] && course.firstYearTuitionFee <= tuitionRange[1]) &&
-        (courseLevel === 'all' || course.courseLevel === courseLevel)
-      );
+    return courses.filter(course => {
+      const matchesSearch =
+        course.Program_Name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        course.Description.toLowerCase().includes(searchTerm.toLowerCase());
+
+      const matchesUniversity =
+        selectedUniversity === 'all' || course.University === selectedUniversity;
+
+      const matchesLevel =
+        courseLevel === 'all' || course.Level === courseLevel;
+
+      const matchesTuition =
+        course.Cost_USD_Per_Year >= tuitionRange[0] &&
+        course.Cost_USD_Per_Year <= tuitionRange[1];
+
+      return matchesSearch && matchesUniversity && matchesLevel && matchesTuition;
     });
-  }, [searchTerm, selectedUniversity, tuitionRange, courseLevel]);
+  }, [courses, searchTerm, selectedUniversity, courseLevel, tuitionRange]);
 
   return (
     <div className="bg-background text-foreground">
+      {/* Hero Section */}
       <section className="text-center py-20 px-4 bg-card border-b">
         <h1 className="font-headline text-5xl md:text-6xl font-extrabold tracking-tight text-primary">
           Find Your Perfect Course
@@ -63,8 +88,10 @@ export default function Home() {
         </div>
       </section>
 
+      {/* Filters & Courses */}
       <section id="search" className="container mx-auto py-12 px-4">
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+          {/* Filters */}
           <aside className="lg:col-span-1">
             <div className="p-6 rounded-lg bg-card shadow-sm sticky top-24">
               <h3 className="font-headline text-2xl font-semibold mb-6 flex items-center gap-2 text-primary">
@@ -72,6 +99,7 @@ export default function Home() {
                 Filters
               </h3>
               <div className="space-y-6">
+                {/* Search */}
                 <div>
                   <label htmlFor="search-term" className="text-sm font-medium">Search by Keyword</label>
                   <div className="relative mt-2">
@@ -79,7 +107,7 @@ export default function Home() {
                     <Input
                       id="search-term"
                       type="text"
-                      placeholder="e.g. Computer Science"
+                      placeholder="e.g. Data Science"
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
                       className="pl-10"
@@ -87,6 +115,7 @@ export default function Home() {
                   </div>
                 </div>
 
+                {/* University */}
                 <div>
                   <label htmlFor="university" className="text-sm font-medium">University</label>
                   <Select value={selectedUniversity} onValueChange={setSelectedUniversity}>
@@ -94,16 +123,14 @@ export default function Home() {
                       <SelectValue placeholder="Select University" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="all">All Universities</SelectItem>
-                      {universityOptions.map((opt) => (
-                        <SelectItem key={opt.value} value={opt.value}>
-                          {opt.label}
-                        </SelectItem>
+                      {universityOptions.map(uni => (
+                        <SelectItem key={uni} value={uni}>{uni === 'all' ? 'All Universities' : uni}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 </div>
-                
+
+                {/* Course Level */}
                 <div>
                   <label htmlFor="course-level" className="text-sm font-medium">Course Level</label>
                   <Select value={courseLevel} onValueChange={setCourseLevel}>
@@ -111,18 +138,17 @@ export default function Home() {
                       <SelectValue placeholder="Select Level" />
                     </SelectTrigger>
                     <SelectContent>
-                      {courseLevels.map((level) => (
-                        <SelectItem key={level} value={level} className="capitalize">
-                          {level}
-                        </SelectItem>
+                      {courseLevels.map(level => (
+                        <SelectItem key={level} value={level}>{level}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 </div>
 
+                {/* Tuition */}
                 <div>
                   <label className="text-sm font-medium">
-                    Max. 1st Year Tuition ({courses[0]?.tuitionFeeCurrency || 'USD'})
+                    Max. 1st Year Tuition (USD)
                   </label>
                   <div className="flex items-center gap-4 mt-2">
                     <Slider
@@ -141,15 +167,32 @@ export default function Home() {
             </div>
           </aside>
 
+          {/* Courses */}
           <main className="lg:col-span-3">
             <h2 className="font-headline text-3xl font-bold mb-6 text-primary">
               {filteredCourses.length} Courses Found
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-              {filteredCourses.map((course) => (
-                <CourseCard key={course.uniqueId} course={course} />
+              {filteredCourses.map(course => (
+                <CourseCard
+                  key={String(course.course_id)}
+                  course={{
+                    Program_Name: course.Program_Name,
+                    University: course.University,
+                    Description: course.Description,
+                    Level: course.Level,
+                    Duration_Months: course.durationMonths ?? 0,
+                    Language: course.Language ?? '',
+                    Cost_USD_Per_Year: course.Cost_USD_Per_Year ?? 0,
+                    Application_Deadline: course.Application_Deadline ?? '',
+                    Program_Type: course.Program_Type ?? '',
+                    Subject_Area: course.Subject_Area ?? '',
+                    courseUrl: `/courses/${course.course_id}`,
+                  }}
+                />
               ))}
             </div>
+
             {filteredCourses.length === 0 && (
               <div className="flex flex-col items-center justify-center text-center bg-card rounded-lg p-12 h-full">
                 <Search className="h-16 w-16 text-muted-foreground/50 mb-4" />

@@ -1,3 +1,5 @@
+import { Key } from "readline";
+
 export interface University {
   universityName: string;
   uniqueCode: string;
@@ -30,6 +32,16 @@ export interface University {
 }
 
 export interface Course {
+  course_id: Key | null | undefined;
+  Program_Type: string;
+  Subject_Area: string;
+  Language: string;
+  Application_Deadline: string;
+  University: string;
+  Cost_USD_Per_Year: number;
+  Program_Name: any;
+  Description: any;
+  Level: any;
   uniqueId: string;
   courseName: string;
   courseCode: string;

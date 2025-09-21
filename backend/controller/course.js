@@ -8,7 +8,7 @@ exports.uploadCourses = async (req, res) => {
     const courses = await courseService.saveCoursesFromCSV(req.file.path);
     console.log(courses);
     await elasticService.bulkIndex(courses);
-    
+
     res.json({ success: true, count: courses.length });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -16,13 +16,21 @@ exports.uploadCourses = async (req, res) => {
 };
 
 exports.searchCourses = async (req, res) => {
-  const { q, category, instructor } = req.query;
-  const cacheKey = `search:${q || ""}:${category || ""}:${instructor || ""}`;
+  const { Program_Name, University, Description, Level, Program_Type, Subject_Area } = req.query;
 
-  const cached = await cacheService.get(cacheKey);
-  if (cached) return res.json(JSON.parse(cached));
-
-  const results = await elasticService.search({ q, category, instructor });
-  await cacheService.set(cacheKey, JSON.stringify(results), 60);
-  res.json(results);
+  try {
+    const results = await elasticService.search({
+      Program_Name,
+      University,
+      Description,
+      Level,
+      Program_Type,
+      Subject_Area,
+    });
+    res.json(results);
+  } catch (err) {
+    console.error("Controller search error:", err);
+    res.status(500).json({ error: "Search failed" });
+  }
 };
+

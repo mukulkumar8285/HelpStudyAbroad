@@ -1,0 +1,11 @@
+course_id,title,description,category,instructor,duration
+C101,Node.js Fundamentals,Learn the basics of Node.js and build server-side apps,Backend Development,John Doe,10
+C102,React Essentials,Build interactive UIs with React,Frontend Development,Jane Smith,12
+C103,Data Structures in Java,Understand key data structures and algorithms,Computer Science,Alice Brown,15
+C104,Full-Stack JavaScript,Combine Node.js and React to create full-stack apps,Full Stack,Michael Green,20
+C105,Python for Data Analysis,Analyze data using Python and Pandas,Data Science,Emily Davis,14
+C106,Machine Learning Basics,Introduction to machine learning concepts and models,Artificial Intelligence,Chris Lee,18
+C107,DevOps with Docker,Learn containerization and deployment with Docker,DevOps,Karen Wilson,8
+C108,TypeScript Mastery,Advanced TypeScript features and best practices,Programming,Daniel White,9
+C109,Database Design,Relational database concepts and normalization,Database,Olivia Taylor,11
+C110,Cloud Computing Intro,Basics of cloud platforms and services,Cloud,Robert Brown,7
